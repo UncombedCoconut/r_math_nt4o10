@@ -52,14 +52,34 @@ void search(double x0, int expi, double power)
         return;
     /* Try to draw and exit. */
     if (c1-c0 == 1 || expi+1 == MAX_DIGITS) {
-        r0_outer = max(0,     floor(img_r0 + img_dr * expansion(expi, x0, x1)));
-        r0_inner = max(0,     floor(img_r0 + img_dr * expansion(expi, x1, x0)));
-        r1_inner = min(img_h,  ceil(img_r0 + img_dr * expansion(expi, x0, x1) + power*(base-1)/(x1-1)));
-        r1_outer = min(img_h,  ceil(img_r0 + img_dr * expansion(expi, x1, x0) + power*(base-1)/(x0-1)));
+        if (x0 >= 1) {
+            r0_outer = max(0,     floor(img_r0 + img_dr * expansion(expi, x0, x1)));
+            r0_inner = max(0,     floor(img_r0 + img_dr * expansion(expi, x1, x0)));
+            r1_inner = min(img_h,  ceil(img_r0 + img_dr * expansion(expi, x0, x1) + power*(base-1)/(x1-1)));
+            r1_outer = min(img_h,  ceil(img_r0 + img_dr * expansion(expi, x1, x0) + power*(base-1)/(x0-1)));
 
-        darken_rect(c0, c1, r0_inner, r1_inner, BLACK);
-        if (!darken_rect(c0, c1, r0_outer, r1_outer, GRAY) || expi+1 == MAX_DIGITS)
-            return;
+            darken_rect(c0, c1, r0_inner, r1_inner, BLACK);
+            if (!darken_rect(c0, c1, r0_outer, r1_outer, GRAY) || expi+1 == MAX_DIGITS)
+                return;
+        }
+        else {
+            /* Draw the exact point (x0, B(x0)) and see if any further decimal places will toss us out the window. */
+            double y0 = x0 ? expansion(expi, x0, x0) : 0;
+            r0_inner = max(0,     0+floor(img_r0 + img_dr * y0));
+            r1_inner = min(img_h, 1+floor(img_r0 + img_dr * y0));
+
+            darken_rect(c0, c0+1, r0_inner, r1_inner, BLACK);
+            if (expi+1 == MAX_DIGITS)
+                return;
+
+            /* This takes a while. Explain that we aren't dead. */
+            if (expi < 8) printf("Progress along (0,1): x=%g\n", x0);
+
+            digits[expi] = 1;
+            double y1_outer = expansion(expi+1, x0, x1);
+            if (img_r0 + img_dr * y1_outer >= (double)img_h)
+                return;
+        }
     }
     /* Some unknowns remain and we haven't hit the iteration limit yet. */
     for (int d = 0; d < base; d++) {
@@ -87,7 +107,7 @@ int main(int argc, char **argv)
     img_h = atoi(argv[5]);
     double img_y0 = atof(argv[6]);
     double img_y1 = atof(argv[7]);
-    assert(img_w > 0 && img_h > 0 && 1 <= img_x0 && img_x0 < img_x1 && img_y0 < img_y1);
+    assert(img_w > 0 && img_h > 0 && img_x0 < img_x1 && img_y0 < img_y1);
     /* Set up */
     img_dc = img_w / (img_x1 - img_x0);
     img_dr = img_h / (img_y1 - img_y0);
