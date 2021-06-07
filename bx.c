@@ -34,7 +34,7 @@ double expansion(int expi, double base_pos, double base_neg)
 {
     double y = 0;
     for (int i = 0; i < expi; i++) {
-        int e = exp0 - expi;
+        int e = exp0 - i;
         y += digits[i] * pow(e>0 ? base_pos : base_neg, e);
     }
     return y;
